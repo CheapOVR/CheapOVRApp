@@ -1,0 +1,17 @@
+<RCC>
+    <qresource prefix="/">
+        <file>images/logo.svg</file>
+        <file>images/splash.svg</file>
+        <file>images/pan-down-symbolic.svg</file>
+        <file>images/toggle-on.svg</file>
+        <file>images/toggle-off.svg</file>
+        <file>images/radiobutton-checked.svg</file>
+        <file>images/radiobutton-unchecked.svg</file>
+        <file>images/reload.svg</file>
+        <file>fonts/Cantarell-Regular.otf</file>
+    </qresource>
+       <qresource prefix="/i18n">
+            <file >vrconf_en.qm</file>
+            <file >vrconf_ru.qm</file>
+        </qresource>
+</RCC>
