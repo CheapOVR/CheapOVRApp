@@ -67,7 +67,11 @@ void MainWindow::runTrackerTest(int mode){
     QProcess *process = new QProcess(this);
     const QString file = QDir::currentPath() + "/glvrtest";
     QStringList arguments;
+    #ifdef __unix__
     arguments << "/dev/" + ui->serialCombo->currentText();
+    #elifdef _WIN32
+    arguments << ui->serialCombo->currentText();
+    #endif
     arguments << (ui->rotBtn->isChecked() ? "1" : "0");
     process->start(file, arguments);
 }
