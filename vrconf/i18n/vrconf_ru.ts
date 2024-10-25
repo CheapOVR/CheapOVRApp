@@ -44,14 +44,6 @@
         <translation>Учетные данные Wi-Fi</translation>
     </message>
     <message>
-        <source>SSID: </source>
-        <translation type="vanished">SSID: </translation>
-    </message>
-    <message>
-        <source>Password: </source>
-        <translation type="vanished">Пароль: </translation>
-    </message>
-    <message>
         <source>Save Wi-Fi credentials</source>
         <translation>Сохранить данные Wi-Fi</translation>
     </message>
@@ -73,23 +65,23 @@
     </message>
     <message>
         <source>Wi-Fi mode settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Настройки Wi-Fi режима</translation>
     </message>
     <message>
         <source>Port:</source>
-        <translation type="unfinished"></translation>
+        <translation>Порт:</translation>
     </message>
     <message>
         <source>IP:</source>
-        <translation type="unfinished"></translation>
+        <translation>IP:</translation>
     </message>
     <message>
         <source>SSID:</source>
-        <translation type="unfinished"></translation>
+        <translation>SSID:</translation>
     </message>
     <message>
         <source>Password:</source>
-        <translation type="unfinished"></translation>
+        <translation>Пароль:</translation>
     </message>
 </context>
 </TS>
