@@ -24,15 +24,15 @@ find_package(glfw3 REQUIRED)
 # FetchContent_MakeAvailable(glfw)
 
 # endif()
-
-
+include(Findsimpleble.cmake)
+# find_package(simpleble REQUIRED)
 
 file(GLOB MAIN
     main.cpp
     )
 
     add_executable(glvrtest ${MAIN})
-    target_link_libraries(glvrtest PRIVATE ${OPENGL_LIBRARIES} glfw serialport)
+    target_link_libraries(glvrtest PRIVATE ${OPENGL_LIBRARIES} glfw serialport simpleble::simpleble)
 
 install(TARGETS glvrtest DESTINATION ${CMAKE_INSTALL_BINDIR})
 if(NOT UNIX)

@@ -5,17 +5,20 @@
 #include <GL/glu.h>
 #include <GLFW/glfw3.h>
 
-#include <iostream>
-#include <stdio.h>
-#include <string.h>
-#include <thread>
-#include <libserialport.h>
-#include <mutex>
 #include <atomic>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
+#include <libserialport.h>
+#include <ostream>
+#include <simpleble/SimpleBLE.h>
+#include <thread>
 std::atomic<bool> needDataFlag{};
 uint8_t read_buf[8];
 bool inbox = false;
-
+uint8_t wrk_mode = 0;
 
 int check(enum sp_return result) {
   char *error_message;
@@ -41,7 +44,7 @@ int check(enum sp_return result) {
 }
 
 void readingThread(char *port_name) {
-
+  if (wrk_mode == 0){
   struct sp_port *port;
   check(sp_get_port_by_name(port_name, &port));
   check(sp_open(port, SP_MODE_READ_WRITE));
@@ -72,9 +75,29 @@ void readingThread(char *port_name) {
   // close(serial_port);
   check(sp_close(port));
   sp_free_port(port);
+  } else if(wrk_mode == 1) {
+    if (!SimpleBLE::Adapter::bluetooth_enabled()) {
+      std::cout << "Bluetooth is not enabled" << std::endl;
+      abort();
+   }
+  auto adapters = SimpleBLE::Adapter::get_adapters();
+  if (adapters.empty()) {
+      std::cout << "No Bluetooth adapters found" << std::endl;
+      abort();
+   }
 
+   // Use the first adapter
+   auto adapter = adapters[0];
+
+   // Do something with the adapter
+   std::cout << "Adapter identifier: " << adapter.identifier() << std::endl;
+   std::cout << "Adapter address: " << adapter.address() << std::endl;
+
+
+  std::cout << "not implemented yet..." << std::endl;
+  abort();
+  }
 }
-
 
 // void window_size_callback(GLFWwindow* window, int width, int height){
 //   gluPerspective(90.f, (GLfloat)width/(GLfloat)height, 1.f, 300.0f);
@@ -82,7 +105,7 @@ void readingThread(char *port_name) {
 
 void renderingThread() {
   GLFWwindow *window;
-  if (!glfwInit()){
+  if (!glfwInit()) {
     abort();
   }
   window = glfwCreateWindow(600, 600, "CheapOVR Test Utility", NULL, NULL);
@@ -206,18 +229,20 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-
-  if (argc >= 3) {
+  if(argc >= 3){
     int num = std::atoi(argv[2]);
     if (num == 1) {
       inbox = true;
     } else {
       inbox = false;
     }
-  } else {
-    inbox = false;
   }
-
+  if (argc >= 4){
+    int num = std::atoi(argv[3]);
+    if (num <= 3) wrk_mode = num;
+    else abort();
+  }
+ 
   
   std::thread render(renderingThread);
   std::thread thread(readingThread, argv[1]);
