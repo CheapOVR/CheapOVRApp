@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
 project(glvrtest LANGUAGES C CXX)
 set(CMAKE_C_CSTANDARD 99)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread -lm")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 

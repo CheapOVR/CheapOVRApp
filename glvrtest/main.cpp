@@ -1,7 +1,9 @@
-// #include <GLES2/gl2.h>
+#ifdef __arm__
+#include <GLES2/gl2.h>
 // #include <GLES2/gl2ext.h>
-
+#else
 #include <GL/gl.h>
+#endif
 #include <GL/glu.h>
 #include <GLFW/glfw3.h>
 
@@ -15,6 +17,12 @@
 #include <ostream>
 #include <simpleble/SimpleBLE.h>
 #include <thread>
+
+
+#define SERVICE_UUID           "6e400001-b5a3-f393-e0a9-e50e24dcca9e" 
+#define CHARACTERISTIC_UUID_RX "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
+#define CHARACTERISTIC_UUID_TX "6e400003-b5a3-f393-e0a9-e50e24dcca9e"
+
 std::atomic<bool> needDataFlag{};
 uint8_t read_buf[8];
 bool inbox = false;
@@ -44,58 +52,85 @@ int check(enum sp_return result) {
 }
 
 void readingThread(char *port_name) {
-  if (wrk_mode == 0){
-  struct sp_port *port;
-  check(sp_get_port_by_name(port_name, &port));
-  check(sp_open(port, SP_MODE_READ_WRITE));
-  check(sp_set_baudrate(port, 115200));
-  check(sp_set_bits(port, 8));
-  check(sp_set_parity(port, SP_PARITY_NONE));
-  check(sp_set_stopbits(port, 1));
-  check(sp_set_flowcontrol(port, SP_FLOWCONTROL_NONE));
-  check(sp_nonblocking_write(port, "S", 1));
-  while (true) {
-    if (needDataFlag.load()) {
+  if (wrk_mode == 0) {
+    struct sp_port *port;
+    check(sp_get_port_by_name(port_name, &port));
+    check(sp_open(port, SP_MODE_READ_WRITE));
+    check(sp_set_baudrate(port, 115200));
+    check(sp_set_bits(port, 8));
+    check(sp_set_parity(port, SP_PARITY_NONE));
+    check(sp_set_stopbits(port, 1));
+    check(sp_set_flowcontrol(port, SP_FLOWCONTROL_NONE));
+    check(sp_nonblocking_write(port, "S", 1));
+    while (true) {
+      if (needDataFlag.load()) {
 
-      uint8_t read_buf_tmp[8];
-      int num_bytes = check(sp_nonblocking_read(port, read_buf_tmp, 8));
-      if (num_bytes < 0 ||
-          !(read_buf_tmp[0] == 0xFE && read_buf_tmp[7] == 0xFF)) {
+        uint8_t read_buf_tmp[8];
+        int num_bytes = check(sp_nonblocking_read(port, read_buf_tmp, 8));
+        if (num_bytes < 0 ||
+            !(read_buf_tmp[0] == 0xFE && read_buf_tmp[7] == 0xFF)) {
 
-      } else if (read_buf_tmp[0] == 0xFE && read_buf_tmp[7] == 0xFF) {
-        memset(&read_buf, '\0', sizeof(read_buf));
-        for (int x = 0; x < 8; x++) {
-          read_buf[x] = read_buf_tmp[x];
+        } else if (read_buf_tmp[0] == 0xFE && read_buf_tmp[7] == 0xFF) {
+          memset(&read_buf, '\0', sizeof(read_buf));
+          for (int x = 0; x < 8; x++) {
+            read_buf[x] = read_buf_tmp[x];
+          }
         }
-      }
 
-      needDataFlag.store(false);
+        needDataFlag.store(false);
+      }
     }
-  }
-  // close(serial_port);
-  check(sp_close(port));
-  sp_free_port(port);
-  } else if(wrk_mode == 1) {
+    // close(serial_port);
+    check(sp_close(port));
+    sp_free_port(port);
+
+
+  } else if (wrk_mode == 1) {
     if (!SimpleBLE::Adapter::bluetooth_enabled()) {
       std::cout << "Bluetooth is not enabled" << std::endl;
       abort();
-   }
-  auto adapters = SimpleBLE::Adapter::get_adapters();
-  if (adapters.empty()) {
+    }
+    auto adapters = SimpleBLE::Adapter::get_adapters();
+    if (adapters.empty()) {
       std::cout << "No Bluetooth adapters found" << std::endl;
       abort();
-   }
+    }
 
-   // Use the first adapter
-   auto adapter = adapters[0];
+    SimpleBLE::Adapter adapter = adapters[0];
+    adapter.scan_for(5000);
 
-   // Do something with the adapter
-   std::cout << "Adapter identifier: " << adapter.identifier() << std::endl;
-   std::cout << "Adapter address: " << adapter.address() << std::endl;
+    std::vector<SimpleBLE::Peripheral> peripherals = adapter.scan_get_results();
+    SimpleBLE::Peripheral peripheral;
+    for (SimpleBLE::Peripheral periph : peripherals) {
+      if (periph.address() == port_name){
+          peripheral = periph;
+          std::cout << "Peripheral identifier: " << peripheral.identifier() << std::endl;
+          std::cout << "Peripheral address: " <<  peripheral.address() << std::endl;
+      }
+    }
+    if (!peripheral.initialized()){
+      std::cout << "Try resetting the tracker with the reset button and start tracking again..." << std::endl;
+      abort();
+    }
+    
+    peripheral.connect();
+    peripheral.write_request(SERVICE_UUID, CHARACTERISTIC_UUID_RX, SimpleBLE::ByteArray("S"));
+    std::cout << "not implemented yet, but connected and started tracking..." << std::endl;
 
+      
+    peripheral.notify(SERVICE_UUID, CHARACTERISTIC_UUID_TX,
+                      [&](SimpleBLE::ByteArray bytes) { 
+                        // if(needDataFlag.load()){
+                        memcpy(read_buf, bytes.c_str(), 8);
+                        needDataFlag.store(false);
+                        // }
 
-  std::cout << "not implemented yet..." << std::endl;
-  abort();
+    });
+        while (true) {}
+    // peripheral.write_request(uuid.first, uuid.second, SimpleBLE::ByteArray("s"));
+
+    peripheral.disconnect();
+    abort();
   }
 }
 
@@ -128,16 +163,10 @@ void renderingThread() {
   gluPerspective(90.f, 1.f, 1.f, 300.0f);
   // glEnable(GL_MULTISAMPLE);
   while (!glfwWindowShouldClose(window)) {
-
     needDataFlag.store(true);
     while (needDataFlag.load()) {
     }
-    // if (read_buf[0] == 0xFE && read_buf[7] == 0xFF) {
-    //   for (int x = 0; x < 8; x++) {
-    //     printf("%d ", read_buf[x]);
-    //   }
-    //   printf("\n");
-    // }
+
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -229,7 +258,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  if(argc >= 3){
+  if (argc >= 3) {
     int num = std::atoi(argv[2]);
     if (num == 1) {
       inbox = true;
@@ -237,13 +266,14 @@ int main(int argc, char *argv[]) {
       inbox = false;
     }
   }
-  if (argc >= 4){
+  if (argc >= 4) {
     int num = std::atoi(argv[3]);
-    if (num <= 3) wrk_mode = num;
-    else abort();
+    if (num <= 3)
+      wrk_mode = num;
+    else
+      abort();
   }
- 
-  
+
   std::thread render(renderingThread);
   std::thread thread(readingThread, argv[1]);
   render.join();
