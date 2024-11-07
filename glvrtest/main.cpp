@@ -24,6 +24,7 @@
 #define CHARACTERISTIC_UUID_TX "6e400003-b5a3-f393-e0a9-e50e24dcca9e"
 
 std::atomic<bool> needDataFlag{};
+std::atomic<bool> running{};
 uint8_t read_buf[8];
 bool inbox = false;
 uint8_t wrk_mode = 0;
@@ -62,7 +63,7 @@ void readingThread(char *port_name) {
     check(sp_set_stopbits(port, 1));
     check(sp_set_flowcontrol(port, SP_FLOWCONTROL_NONE));
     check(sp_nonblocking_write(port, "S", 1));
-    while (true) {
+    while (running.load()) {
       if (needDataFlag.load()) {
 
         uint8_t read_buf_tmp[8];
@@ -126,17 +127,22 @@ void readingThread(char *port_name) {
                         // }
 
     });
-        while (true) {}
-    // peripheral.write_request(uuid.first, uuid.second, SimpleBLE::ByteArray("s"));
+        while (running.load()) {
 
+        }
+    // peripheral.write_request(uuid.first, uuid.second, SimpleBLE::ByteArray("s"));
+    std::cout << "Disconnecting..." << std::endl;
     peripheral.disconnect();
-    abort();
+    std::cout << "Disconnected!" << std::endl;
   }
 }
 
 // void window_size_callback(GLFWwindow* window, int width, int height){
 //   gluPerspective(90.f, (GLfloat)width/(GLfloat)height, 1.f, 300.0f);
 // }
+void exitApp(GLFWwindow* window){
+  running.store(false);
+}
 
 void renderingThread() {
   GLFWwindow *window;
@@ -151,21 +157,23 @@ void renderingThread() {
   }
   glfwSetWindowSizeLimits(window, 600, 600, 600, 600);
   glfwMakeContextCurrent(window);
+  glfwWindowHint(GLFW_SAMPLES, 4);
   // glfwSetWindowSizeCallback(window, window_size_callback);
   glClearDepth(1.f);
   glClearColor(0.0f, 0.0f, 0.0f, 0.f);
   glEnable(GL_DEPTH_TEST);
+  glEnable(GL_MULTISAMPLE);  
   glDepthMask(GL_TRUE);
 
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-
+  glfwSetWindowCloseCallback(window, exitApp);
   gluPerspective(90.f, 1.f, 1.f, 300.0f);
   // glEnable(GL_MULTISAMPLE);
   while (!glfwWindowShouldClose(window)) {
     needDataFlag.store(true);
-    while (needDataFlag.load()) {
-    }
+  while (needDataFlag.load()) {
+  }
 
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -273,6 +281,7 @@ int main(int argc, char *argv[]) {
     else
       abort();
   }
+  running.store(true);
 
   std::thread render(renderingThread);
   std::thread thread(readingThread, argv[1]);
