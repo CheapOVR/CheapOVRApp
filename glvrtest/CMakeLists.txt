@@ -27,7 +27,8 @@ find_package(glfw3 REQUIRED)
 # endif()
 include(Findsimpleble.cmake)
 # find_package(simpleble REQUIRED)
-
+add_custom_command(OUTPUT cmdline.c COMMAND gengetopt -iglvrtest.ggo WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+# add_library(cmdline cmdline.c)
 file(GLOB MAIN
     main.cpp
     )

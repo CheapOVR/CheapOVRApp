@@ -1,0 +1,5 @@
+package "glvrtest"
+version "0.0.2"
+purpose "Glvrtest is a head tracker test app."
+option  "str-opt"         s "A string option"      string     no
+option  "ble"        - "Use BLE mode"        flag	  off

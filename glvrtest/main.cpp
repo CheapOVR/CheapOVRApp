@@ -17,7 +17,7 @@
 #include <ostream>
 #include <simpleble/SimpleBLE.h>
 #include <thread>
-
+#include "cmdline.h"
 
 #define SERVICE_UUID           "6e400001-b5a3-f393-e0a9-e50e24dcca9e" 
 #define CHARACTERISTIC_UUID_RX "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
@@ -116,7 +116,7 @@ void readingThread(char *port_name) {
     
     peripheral.connect();
     peripheral.write_request(SERVICE_UUID, CHARACTERISTIC_UUID_RX, SimpleBLE::ByteArray("S"));
-    std::cout << "not implemented yet, but connected and started tracking..." << std::endl;
+    std::cout << "Connected" << std::endl;
 
       
     peripheral.notify(SERVICE_UUID, CHARACTERISTIC_UUID_TX,
@@ -260,7 +260,7 @@ void renderingThread() {
 }
 
 int main(int argc, char *argv[]) {
-
+  if (argv)
   if (argc == 1) {
     std::cout << "Required one or more arguments" << std::endl;
     return 1;
