@@ -8,33 +8,25 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 include(FindOpenGL)
 find_package(OpenGL REQUIRED)
 
-# if(LINUX)
 find_package(glfw3 REQUIRED)
-# else()
-# include(FetchContent)
 
-# FetchContent_Declare(
-#     glfw
-#     GIT_REPOSITORY  https://github.com/glfw/glfw.git
-#     SOURCE_DIR      "${CMAKE_CURRENT_SOURCE_DIR}/glfw-src"
-#     GIT_TAG         "master"
-#     GIT_SHALLOW     TRUE
-# )
-
-# set(CMAKE_BUILD_TYPE Release)
-# FetchContent_MakeAvailable(glfw)
-
-# endif()
-include(Findsimpleble.cmake)
-# find_package(simpleble REQUIRED)
 add_custom_command(OUTPUT cmdline.c COMMAND gengetopt -iglvrtest.ggo WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-# add_library(cmdline cmdline.c)
+
+if(ENABLE_BLE)
+include(Findsimpleble.cmake)
+endif()
+
+
 file(GLOB MAIN
     main.cpp
     )
 
-    add_executable(glvrtest ${MAIN})
-    target_link_libraries(glvrtest PRIVATE ${OPENGL_LIBRARIES} glfw serialport simpleble::simpleble)
+    add_executable(glvrtest ${MAIN} cmdline.c)
+    if(ENABLE_BLE)
+    target_compile_definitions(glvrtest PRIVATE BLE)
+    target_link_libraries(glvrtest PRIVATE simpleble::simpleble)
+    endif()
+    target_link_libraries(glvrtest PRIVATE ${OPENGL_LIBRARIES} glfw serialport)
 
 install(TARGETS glvrtest DESTINATION ${CMAKE_INSTALL_BINDIR})
 if(NOT UNIX)

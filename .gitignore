@@ -18,3 +18,8 @@ glvrtest
 build
 cmdline.h
 cmdline.c
+vrconf
+!vrconf/
+vrconf_*.qm
+vrconf_autogen
+.lupdate
