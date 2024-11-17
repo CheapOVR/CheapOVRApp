@@ -82,10 +82,7 @@ void readingThread(char *port_name) {
             read_buf[x] = read_buf_tmp[x];
           }
         }
-        for (int x = 0; x < 8; x++) {
-            printf("%d ", read_buf_tmp[x]);
-        }
-        printf("\n");
+
 
         needDataFlag.store(false);
       }
